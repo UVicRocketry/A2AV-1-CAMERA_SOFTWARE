@@ -1,0 +1,10 @@
+{
+  "name": "RunCam",
+  "author": "Khephren",
+  "pins": [
+    "RX",
+    "TX",
+    "GND",
+    "VCC"
+  ]
+}
