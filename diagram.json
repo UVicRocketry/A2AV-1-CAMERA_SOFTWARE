@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "author": "Khephren Gould",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "wokwi-arduino-nano", "id": "nano", "top": -4.8, "left": -0.5, "attrs": {} },
+    { "type": "wokwi-logic-analyzer", "id": "logic1", "top": -172.45, "left": 249.6, "attrs": {} },
+    {
+      "type": "chip-runcam",
+      "id": "chip1",
+      "top": -153.8,
+      "left": -13.42,
+      "rotate": 90,
+      "attrs": {}
+    },
+    { "type": "wokwi-mpu6050", "id": "imu1", "top": 167.02, "left": 40.72, "attrs": {} },
+    {
+      "type": "wokwi-resistor",
+      "id": "r1",
+      "top": 110.4,
+      "left": 105.05,
+      "rotate": 90,
+      "attrs": { "value": "10000" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r2",
+      "top": 110.4,
+      "left": 85.85,
+      "rotate": 90,
+      "attrs": { "value": "10000" }
+    }
+  ],
+  "connections": [
+    [ "chip1:VCC", "nano:3.3V", "red", [ "h0" ] ],
+    [ "chip1:GND", "nano:GND.2", "black", [ "v59.41", "h86.9" ] ],
+    [ "logic1:D1", "nano:5", "green", [ "h0" ] ],
+    [ "chip1:TX", "nano:0", "green", [ "v-19.2", "h96" ] ],
+    [ "nano:1", "chip1:RX", "green", [ "v-244.8", "h-106.1" ] ],
+    [ "logic1:D2", "nano:0", "green", [ "h0" ] ],
+    [ "logic1:D3", "nano:1", "green", [ "h0" ] ],
+    [ "imu1:VCC", "nano:5V", "red", [ "v-9.6", "h57.68", "v-96", "h-48" ] ],
+    [ "imu1:GND", "nano:GND.1", "black", [ "h48.08", "v-67.2" ] ],
+    [ "nano:5V", "r2:1", "red", [ "v9.6", "h-9.6" ] ],
+    [ "nano:5V", "r1:1", "red", [ "v9.6", "h9.6" ] ],
+    [ "r2:2", "nano:A4", "green", [ "h-28.8", "v-10.8" ] ],
+    [ "r2:2", "imu1:SDA", "green", [ "h0" ] ],
+    [ "r1:2", "imu1:SCL", "green", [ "h0" ] ],
+    [ "r1:2", "nano:A5", "green", [ "h0" ] ]
+  ],
+  "dependencies": {}
+}
