@@ -2,34 +2,80 @@
 #include <Adafruit_MPU6050.h>
 #include <Adafruit_Sensor.h>
 #include <Wire.h>
+//For accelerometer
+#include <Adafruit_ADXL375.h>
 
 #define BUFF_SIZE   20
 //Note: only z-axis acceleration should be used with this sensor to simulate adafruit adxl375
 Adafruit_MPU6050 mpu;
 const int mpuAddress = 0x68;          // I2C address of the MPU-6050
 bool LAUNCHED;
+//Used to output data over software serial
+//Nano only has one hardware serial interface
+//Do not want to corrupt it by writing un-needed data on it
 SoftwareSerial Serial1 (4,5);
 char
     szStr[30];
+
+//Buffers for transmitting UART signals.
 uint8_t 
     txBuf[BUFF_SIZE],
     rxBuf[BUFF_SIZE];
-    
+
+/*
+idx: the current index of the receive (Rx buffer)
+crc: byte resulting from running cyclical redundancy check algorithm on buffer
+exp_crc: the crc byte we expected to receive based on the other bytes in the packet
+ch: stores a single byte read from the uart interface
+*/
 uint8_t 
     idx,
     crc,
     exp_crc,
     ch;
+
+//The acceleration in m/s that triggers launch detection (in METERS/SECOND)
+//I repeat: IN METERS/SECOND
 const float THRESHOLD = 10;
+
+//variable to track what millis() value the timer starts at
 int start_time = 0;
+
+//variable to track the current millis() value
 long long current_time = 0;
+//enumerator used for states when receiving packets
 enum eRXStates
 {
     RX_HEADER=0,
     RX_PACKET
 };
+
+//tracks the type of byte the last byte read was
 static uint8_t
         state = RX_HEADER;
+
+
+    /*
+-----------------ACCELEROMETER THINGS---------------
+*/
+//Primarily using information from Greyson's algorithm
+//TODO determine if need another call to Signal.begin(baud rate)
+
+//Optional tag that is added used by accelerometer to tag events
+int32_t sensorID = 12345; 
+
+//Accelerometer type from Adafruit_ADXL375.h 
+//Documentation found in: https://github.com/adafruit/Adafruit_ADXL375/blob/master/Adafruit_ADXL375.cpp
+Adafruit_ADXL375 accel = Adafruit_ADXL375(sensorID);
+
+
+void calibrateAccelerometer(); //From Greyson
+//Note to self, NOT presently using G's, instead everything will remain in m/s^2
+
+
+/*
+----------------- END OF ACCELEROMETER THINGS---------------
+*/
 void setup( void )
 {
     mpu.begin();
@@ -53,8 +99,6 @@ A function to process incoming data from the RunCam
 Data is recieved from the hardware serial interface.
 Debugging messages are sent to the user through a software serial interface
 This interface uses pin 3 as Tx and has no Rx
-
-
 
 */
 void process_RunCam_data(){
@@ -90,7 +134,7 @@ void process_RunCam_data(){
 bool process_Accelerometer_data(){
   sensors_event_t a, g, temp;
   mpu.getEvent(&a, &g, &temp);
-  if(a.acceleration.z > 9.81){
+  if(a.acceleration.z > THRESHOLD){
     return true;
   }
   return false;
@@ -148,3 +192,22 @@ uint8_t crc8_calc( uint8_t crc, unsigned char a, uint8_t poly )
     return crc;
     
 }//crc8_calc
+
+//From Greysons's algorithm, for calibrating the accelerometer
+void calibrateAccelerometer() {
+  delay(2000); // Delay for stable readings
+
+  sensors_event_t event;
+  accel.getEvent(&event);
+
+  x_zero = event.acceleration.x;
+  y_zero = event.acceleration.y;
+  z_zero = event.acceleration.z;
+
+  //This should possibly be commented out for actual code running. 
+
+  Serial.println("Zero calibration complete");
+  Serial.print("x_zero: "); Serial.println(x_zero);
+  Serial.print("y_zero: "); Serial.println(y_zero);
+  Serial.print("z_zero: "); Serial.println(z_zero); Serial.println("");
+}
