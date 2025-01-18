@@ -34,6 +34,10 @@ uint8_t
     exp_crc,
     ch;
 
+//the timer threshold used to determine when to stop recording (in MILLISECONDS)
+//I repeat: IN MILLISECONDS
+long long MAX_FOOTAGE_LENGTH_MS = 6000;
+
 //The acceleration in m/s that triggers launch detection (in METERS/SECOND)
 //I repeat: IN METERS/SECOND
 const float THRESHOLD = 10;
@@ -81,6 +85,16 @@ void setup( void )
     mpu.begin();
     Serial.begin(115200); 
     Serial1.begin(9600);
+/* Initialise the sensor */
+  if(!accel.begin()) {
+    /* There was a problem detecting the ADXL375 ... check your connections */
+    Serial.println("Ooops, no ADXL375 detected ... Check your wiring!");
+    // while(1);
+  }
+    calibrateAccelerometer();
+
+
+
     //give the runcam time to send whatever it does out of reset
     delay(3000); 
     //flush any spurious chars from receive buffer
@@ -147,6 +161,7 @@ bool process_Accelerometer_data(){
   }
   return false;
 }
+
 bool process_Accelerometer_data_ADXL375(){
   sensors_event_t event; 
   acccel.getEvent(&event);
@@ -165,6 +180,8 @@ void loop( void )
     process_RunCam_data();
     current_time = millis();
     bool launch_detected = process_Accelerometer_data();
+    //if launch detected, increase footage quality
+
     if(launch_detected && !LAUNCHED){
       txBuf[0]=0xCC;
       txBuf[1]=0x01;
@@ -174,7 +191,8 @@ void loop( void )
       start_time = millis();
       LAUNCHED=true;
     }
-    if(current_time - start_time > 6000 && LAUNCHED){
+    //if we have detected launch and the timer has expired, stop recording.
+    if(current_time - start_time > MAX_FOOTAGE_LENGTH_MS && LAUNCHED){
       txBuf[0]=0xCC;
       txBuf[1]=0x01;
       txBuf[2]=0x04;
@@ -222,7 +240,7 @@ void calibrateAccelerometer() {
   y_zero = event.acceleration.y;
   z_zero = event.acceleration.z;
 
-  //This should possibly be commented out for actual code running. 
+  //This should possibly be commented out for actual code running. (I THINK)
 
   Serial.println("Zero calibration complete");
   Serial.print("x_zero: "); Serial.println(x_zero);
