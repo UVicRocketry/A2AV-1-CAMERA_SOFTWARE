@@ -2,7 +2,7 @@
 #include <Adafruit_MPU6050.h>
 #include <Adafruit_Sensor.h>
 #include <Wire.h>
-//For accelerometer
+//For ADXL375 accelerometer
 #include <Adafruit_ADXL375.h>
 
 #define BUFF_SIZE   20
@@ -131,6 +131,14 @@ void process_RunCam_data(){
         
     }//if
 }
+
+/*
+PARAMS: NONE
+DESC: Polls the I2C interface between the arduino nano and the accelerometer. Checks
+      the result against THRESHOLD to see if its been reached
+RETURNS: boolean set to true if THRESHOLD exceeded and false if not
+NOTE THIS ONE USES THE MPU6050!!! 
+*/
 bool process_Accelerometer_data(){
   sensors_event_t a, g, temp;
   mpu.getEvent(&a, &g, &temp);
@@ -139,6 +147,16 @@ bool process_Accelerometer_data(){
   }
   return false;
 }
+bool process_Accelerometer_data_ADXL375(){
+  sensors_event_t event; 
+  acccel.getEvent(&event);
+  if(event.acceleration.z > THRESHOLD){
+    return true;
+  }
+  return false;
+}
+
+
 void loop( void )
 {
     
