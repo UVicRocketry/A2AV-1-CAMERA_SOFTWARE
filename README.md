@@ -1,2 +1,1 @@
-# CAMERA-SOFTWARE
-software for the runcam flying on Anduril 2
+A repository to store simulation code for the camera system onboard Anudril 1
