@@ -85,13 +85,23 @@ void setup( void )
     mpu.begin();
     Serial.begin(115200); 
     Serial1.begin(9600);
+    bool haveAccelerometer =true; 
 /* Initialise the sensor */
   if(!accel.begin()) {
     /* There was a problem detecting the ADXL375 ... check your connections */
     Serial.println("Ooops, no ADXL375 detected ... Check your wiring!");
+    haveAccelerometer = false; 
+
     // while(1);
+    /*
+    TODO add a flow to the algorithm that will start recording only in high definition, and 
+    will record until the end of space/battery/limiting factor with no consideration for flight/landing/other more complex algos
+    */
+    
   }
+  if(haveAccelerometer){ 
     calibrateAccelerometer();
+  }
 
 
 
