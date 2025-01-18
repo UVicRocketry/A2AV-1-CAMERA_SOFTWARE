@@ -1,0 +1,9 @@
+{
+  "name": "UART Printer",
+  "author": "Khephren Gould",
+  "pins": [
+    "RX",
+    "TX",
+    "VCC"
+  ]
+}
