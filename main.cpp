@@ -75,7 +75,7 @@ int32_t sensorID = 12345;
 //Accelerometer type from Adafruit_ADXL375.h 
 //Documentation found in: https://github.com/adafruit/Adafruit_ADXL375/blob/master/Adafruit_ADXL375.cpp
 Adafruit_ADXL375 accel = Adafruit_ADXL375(sensorID);
-
+ 
 
 void calibrateAccelerometer(); //From Greyson
 //Note to self, NOT presently using G's, instead everything will remain in m/s^2
