@@ -14,7 +14,7 @@ Expected Behavior: Camera recording quality increases without pause in recording
 Expected Behavior: //Button push or some other manual input should cause the filming quality to increase
 camera should continue recording with no issues
 */ 
-int manualQualityIncreaseTest(){
+void  manualQualityIncreaseTest(){
     /*
     turn camera on, start recording
 
@@ -23,7 +23,6 @@ int manualQualityIncreaseTest(){
     call close down funtion that stops recording
     */
 
-    return 0; //unsuccessful or unimplemented 
 }
 
 
@@ -34,9 +33,9 @@ Precondition(s): camera is on and footage is being recorded at a quality that is
 Action(s): reduce video quality command sent to camera (via a function in the library)
 Expected Behavior:  camera footage decreases in quality when it recieves manual input and continues recording with no issues
 */
-bool manualQualityDecreaseTest(){
+void  manualQualityDecreaseTest(){
 
-    return false; //test failed or 
+    
 }
 
 //TC5 Make test of Stopping footage
@@ -62,15 +61,27 @@ Action(s): Stop recording, (check after that video is saved correctly) restart r
 Expected Behavior: Camera should start recording as usual with no issues
 */
 
+
+
 //TC7 Have a very small/very full storage card in camera, and start recording and keep recording 
 /*
-Goal: Test that 
-TCs covered: 
-Precondition(s): 
-Action(s)
-Expected Behavior: 
+Goal: Test that the camera can save video correctly when it runs out of space
+TCs covered: 7
+Precondition(s): Very full or very small SD card is used. Camera is running (at high quality to speed up the test)
+Action(s): allow the camera to run until it is full
+Expected Behavior: Camera should stop recording, and video should be saved successfully with no issues (be retrievable)
 */
 
+//TC 8 have the batteries run out
+/*
+Goal: Test that the camera can save video correctly when it loses power
+TCs covered: 8
+Precondition(s): Camera is recording video as usual
+Action(s): pull out batteries, or open the circuit in some other way to simulate losing power (DON'T RUN BATTERIES TO EMPTY- IT WILL DAMAGE THEM)
+Expected Behavior: Camera should stop recording, and video shoudl be saved successfully with no issues (be retrievable)
+*/
+
+//TC8 have camera/accelerometer experience acceleration above the threshold value, and use that to trigger something in the camera
 
 
 
