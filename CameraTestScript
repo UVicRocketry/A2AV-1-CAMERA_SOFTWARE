@@ -1,5 +1,38 @@
-//TODO Make test of turning on
-//Make test of changing footage quality (likely have printed text to show changes in quality best)
+//TODO 
+//TC1 Make test of turning on
+//TC2 Make test of turning off
+//TC3 Make test of increasing footage quality (likely have printed text to show changes in quality best) while camera is "rolling"
+//TC4 make test of decreasing 
 //Make test of Stopping footage
 //make test of restarting footage
+//
 
+/*
+Use cases: 
+
+as a user, I want to be able to turn on the camera, and have it turn off after a set period of time
+
+As  a user, I want to be able to turn on the camera and start recording right away, increase footage quality after some (non manual) input, then stop after a time limit 
+
+As a user, I want the camera to safely turn off and stop recording when power is lost/batteries go low. 
+
+
+
+*/
+
+
+
+//Test of basic turn on and turn off using user input 
+//Covers TC1 TC2 
+int BasicTurnOnOffTest(){
+
+    return 0; //unsuccessful
+}
+
+
+//Test of footage quality increase with manual input 
+//Covers TC3
+//Button push or some other manual imput should cause the filming quality to increase
+int manualQualityIncreaseTest(){
+    return 0; //unsuccessful or unimplemented 
+}
