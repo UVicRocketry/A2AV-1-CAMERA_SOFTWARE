@@ -91,29 +91,29 @@ void calibrateAccelerometer(); //From Greyson
 ----------------- functions taken from main--------------------
 */
 
-void getDeviceInfo(){
-  //get device info command
-    txBuf[0] = 0xCC;
-    txBuf[1] = 0x00; 
-    txBuf[2] = calcCrc( txBuf, 2 );  //compute the CRC    
-    Serial.write(txBuf, 3);
-}
+// void getDeviceInfo(){
+//   //get device info command
+//     txBuf[0] = 0xCC;
+//     txBuf[1] = 0x00; 
+//     txBuf[2] = calcCrc( txBuf, 2 );  //compute the CRC    
+//     Serial.write(txBuf, 3);
+// }
 
-void increaseFootageQuality(){
-      txBuf[0]=0xCC;
-      txBuf[1]=0x01;
-      txBuf[2]=0x02;
-      txBuf[3]= calcCrc(txBuf,3);
-      Serial.write(txBuf,4);
-}
+// void increaseFootageQuality(){
+//       txBuf[0]=0xCC;
+//       txBuf[1]=0x01;
+//       txBuf[2]=0x02;
+//       txBuf[3]= calcCrc(txBuf,3);
+//       Serial.write(txBuf,4);
+// }
 
-void stopRecording(){
-  txBuf[0]=0xCC;
-      txBuf[1]=0x01;
-      txBuf[2]=0x04;
-      txBuf[3]= calcCrc(txBuf,3);
-      Serial.write(txBuf,4);
-}
+// void stopRecording(){
+//   txBuf[0]=0xCC;
+//       txBuf[1]=0x01;
+//       txBuf[2]=0x04;
+//       txBuf[3]= calcCrc(txBuf,3);
+//       Serial.write(txBuf,4);
+// }
 
 void setup( void )
 {
@@ -194,30 +194,30 @@ void process_RunCam_data(){
     }//if
 }
 
-/*
-PARAMS: NONE
-DESC: Polls the I2C interface between the arduino nano and the accelerometer. Checks
-      the result against THRESHOLD to see if its been reached
-RETURNS: boolean set to true if THRESHOLD exceeded and false if not
-NOTE THIS ONE USES THE MPU6050!!! 
-*/
-bool process_Accelerometer_data(){
-  sensors_event_t a, g, temp;
-  mpu.getEvent(&a, &g, &temp);
-  if(a.acceleration.z > THRESHOLD){
-    return true;
-  }
-  return false;
-}
+// /*
+// PARAMS: NONE
+// DESC: Polls the I2C interface between the arduino nano and the accelerometer. Checks
+//       the result against THRESHOLD to see if its been reached
+// RETURNS: boolean set to true if THRESHOLD exceeded and false if not
+// NOTE THIS ONE USES THE MPU6050!!! 
+// */
+// bool process_Accelerometer_data(){
+//   sensors_event_t a, g, temp;
+//   mpu.getEvent(&a, &g, &temp);
+//   if(a.acceleration.z > THRESHOLD){
+//     return true;
+//   }
+//   return false;
+// }
 
-bool process_Accelerometer_data_ADXL375(){
-  sensors_event_t event; 
-  acccel.getEvent(&event);
-  if(event.acceleration.z > THRESHOLD){
-    return true;
-  }
-  return false;
-}
+// bool process_Accelerometer_data_ADXL375(){
+//   sensors_event_t event; 
+//   acccel.getEvent(&event);
+//   if(event.acceleration.z > THRESHOLD){
+//     return true;
+//   }
+//   return false;
+// }
 
 
 void loop( void )
@@ -227,7 +227,7 @@ void loop( void )
     delay(500);
     process_RunCam_data();
     current_time = millis();
-    bool launch_detected = process_Accelerometer_data();
+    bool launch_detected = process_Accelerometer_data(THRESHOLD);
     //if launch detected, increase footage quality
 
     if(launch_detected && !LAUNCHED){
