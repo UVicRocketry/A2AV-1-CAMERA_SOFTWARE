@@ -5,6 +5,8 @@
 //For ADXL375 accelerometer
 #include <Adafruit_ADXL375.h>
 
+#include "CameraFunctions.h"
+
 #define BUFF_SIZE   20
 //Note: only z-axis acceleration should be used with this sensor to simulate adafruit adxl375
 Adafruit_MPU6050 mpu;
@@ -84,6 +86,35 @@ void calibrateAccelerometer(); //From Greyson
 /*
 ----------------- END OF ACCELEROMETER THINGS---------------
 */
+
+/*
+----------------- functions taken from main--------------------
+*/
+
+void getDeviceInfo(){
+  //get device info command
+    txBuf[0] = 0xCC;
+    txBuf[1] = 0x00; 
+    txBuf[2] = calcCrc( txBuf, 2 );  //compute the CRC    
+    Serial.write(txBuf, 3);
+}
+
+void increaseFootageQuality(){
+      txBuf[0]=0xCC;
+      txBuf[1]=0x01;
+      txBuf[2]=0x02;
+      txBuf[3]= calcCrc(txBuf,3);
+      Serial.write(txBuf,4);
+}
+
+void stopRecording(){
+  txBuf[0]=0xCC;
+      txBuf[1]=0x01;
+      txBuf[2]=0x04;
+      txBuf[3]= calcCrc(txBuf,3);
+      Serial.write(txBuf,4);
+}
+
 void setup( void )
 {
     mpu.begin();
@@ -117,10 +148,11 @@ void setup( void )
     while( Serial.available() > 0 )
         Serial.read();
     //get device info command
-    txBuf[0] = 0xCC;
-    txBuf[1] = 0x00; 
-    txBuf[2] = calcCrc( txBuf, 2 );  //compute the CRC    
-    Serial.write(txBuf, 3);
+    getDeviceInfo(); 
+    // txBuf[0] = 0xCC;
+    // txBuf[1] = 0x00; 
+    // txBuf[2] = calcCrc( txBuf, 2 );  //compute the CRC    
+    // Serial.write(txBuf, 3);
     
 }//setup
 
@@ -199,22 +231,24 @@ void loop( void )
     //if launch detected, increase footage quality
 
     if(launch_detected && !LAUNCHED){
-      txBuf[0]=0xCC;
-      txBuf[1]=0x01;
-      txBuf[2]=0x02;
-      txBuf[3]= calcCrc(txBuf,3);
-      Serial.write(txBuf,4);
+      // txBuf[0]=0xCC;
+      // txBuf[1]=0x01;
+      // txBuf[2]=0x02;
+      // txBuf[3]= calcCrc(txBuf,3);
+      // Serial.write(txBuf,4);
+      increaseFootageQuality(); 
+
       start_time = millis();
       LAUNCHED=true;
     }
     //if we have detected launch and the timer has expired, stop recording.
     if(current_time - start_time > MAX_FOOTAGE_LENGTH_MS && LAUNCHED){
-      txBuf[0]=0xCC;
-      txBuf[1]=0x01;
-      txBuf[2]=0x04;
-      txBuf[3]= calcCrc(txBuf,3);
-      Serial.write(txBuf,4);
-    
+      // txBuf[0]=0xCC;
+      // txBuf[1]=0x01;
+      // txBuf[2]=0x04;
+      // txBuf[3]= calcCrc(txBuf,3);
+      // Serial.write(txBuf,4);
+    stopRecording(); 
     }
     
 }//loop
