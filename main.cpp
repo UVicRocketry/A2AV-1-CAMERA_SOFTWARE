@@ -5,6 +5,8 @@
 //For ADXL375 accelerometer
 #include <Adafruit_ADXL375.h>
 
+#include "CameraFunctions.h"
+
 #define BUFF_SIZE   20
 //Note: only z-axis acceleration should be used with this sensor to simulate adafruit adxl375
 Adafruit_MPU6050 mpu;
@@ -75,7 +77,7 @@ int32_t sensorID = 12345;
 //Accelerometer type from Adafruit_ADXL375.h 
 //Documentation found in: https://github.com/adafruit/Adafruit_ADXL375/blob/master/Adafruit_ADXL375.cpp
 Adafruit_ADXL375 accel = Adafruit_ADXL375(sensorID);
-
+ 
 
 void calibrateAccelerometer(); //From Greyson
 //Note to self, NOT presently using G's, instead everything will remain in m/s^2
@@ -84,6 +86,35 @@ void calibrateAccelerometer(); //From Greyson
 /*
 ----------------- END OF ACCELEROMETER THINGS---------------
 */
+
+/*
+----------------- functions taken from main--------------------
+*/
+
+// void getDeviceInfo(){
+//   //get device info command
+//     txBuf[0] = 0xCC;
+//     txBuf[1] = 0x00; 
+//     txBuf[2] = calcCrc( txBuf, 2 );  //compute the CRC    
+//     Serial.write(txBuf, 3);
+// }
+
+// void increaseFootageQuality(){
+//       txBuf[0]=0xCC;
+//       txBuf[1]=0x01;
+//       txBuf[2]=0x02;
+//       txBuf[3]= calcCrc(txBuf,3);
+//       Serial.write(txBuf,4);
+// }
+
+// void stopRecording(){
+//   txBuf[0]=0xCC;
+//       txBuf[1]=0x01;
+//       txBuf[2]=0x04;
+//       txBuf[3]= calcCrc(txBuf,3);
+//       Serial.write(txBuf,4);
+// }
+
 void setup( void )
 {
     mpu.begin();
@@ -117,10 +148,11 @@ void setup( void )
     while( Serial.available() > 0 )
         Serial.read();
     //get device info command
-    txBuf[0] = 0xCC;
-    txBuf[1] = 0x00; 
-    txBuf[2] = calcCrc( txBuf, 2 );  //compute the CRC    
-    Serial.write(txBuf, 3);
+    getDeviceInfo(); 
+    // txBuf[0] = 0xCC;
+    // txBuf[1] = 0x00; 
+    // txBuf[2] = calcCrc( txBuf, 2 );  //compute the CRC    
+    // Serial.write(txBuf, 3);
     
 }//setup
 
@@ -162,30 +194,30 @@ void process_RunCam_data(){
     }//if
 }
 
-/*
-PARAMS: NONE
-DESC: Polls the I2C interface between the arduino nano and the accelerometer. Checks
-      the result against THRESHOLD to see if its been reached
-RETURNS: boolean set to true if THRESHOLD exceeded and false if not
-NOTE THIS ONE USES THE MPU6050!!! 
-*/
-bool process_Accelerometer_data(){
-  sensors_event_t a, g, temp;
-  mpu.getEvent(&a, &g, &temp);
-  if(a.acceleration.z > THRESHOLD){
-    return true;
-  }
-  return false;
-}
+// /*
+// PARAMS: NONE
+// DESC: Polls the I2C interface between the arduino nano and the accelerometer. Checks
+//       the result against THRESHOLD to see if its been reached
+// RETURNS: boolean set to true if THRESHOLD exceeded and false if not
+// NOTE THIS ONE USES THE MPU6050!!! 
+// */
+// bool process_Accelerometer_data(){
+//   sensors_event_t a, g, temp;
+//   mpu.getEvent(&a, &g, &temp);
+//   if(a.acceleration.z > THRESHOLD){
+//     return true;
+//   }
+//   return false;
+// }
 
-bool process_Accelerometer_data_ADXL375(){
-  sensors_event_t event; 
-  acccel.getEvent(&event);
-  if(event.acceleration.z > THRESHOLD){
-    return true;
-  }
-  return false;
-}
+// bool process_Accelerometer_data_ADXL375(){
+//   sensors_event_t event; 
+//   acccel.getEvent(&event);
+//   if(event.acceleration.z > THRESHOLD){
+//     return true;
+//   }
+//   return false;
+// }
 
 
 void loop( void )
@@ -195,26 +227,28 @@ void loop( void )
     delay(500);
     process_RunCam_data();
     current_time = millis();
-    bool launch_detected = process_Accelerometer_data();
+    bool launch_detected = process_Accelerometer_data(THRESHOLD);
     //if launch detected, increase footage quality
 
     if(launch_detected && !LAUNCHED){
-      txBuf[0]=0xCC;
-      txBuf[1]=0x01;
-      txBuf[2]=0x02;
-      txBuf[3]= calcCrc(txBuf,3);
-      Serial.write(txBuf,4);
+      // txBuf[0]=0xCC;
+      // txBuf[1]=0x01;
+      // txBuf[2]=0x02;
+      // txBuf[3]= calcCrc(txBuf,3);
+      // Serial.write(txBuf,4);
+      increaseFootageQuality(); 
+
       start_time = millis();
       LAUNCHED=true;
     }
     //if we have detected launch and the timer has expired, stop recording.
     if(current_time - start_time > MAX_FOOTAGE_LENGTH_MS && LAUNCHED){
-      txBuf[0]=0xCC;
-      txBuf[1]=0x01;
-      txBuf[2]=0x04;
-      txBuf[3]= calcCrc(txBuf,3);
-      Serial.write(txBuf,4);
-    
+      // txBuf[0]=0xCC;
+      // txBuf[1]=0x01;
+      // txBuf[2]=0x04;
+      // txBuf[3]= calcCrc(txBuf,3);
+      // Serial.write(txBuf,4);
+    stopRecording(); 
     }
     
 }//loop

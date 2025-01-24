@@ -1,5 +1,119 @@
-//TODO Make test of turning on
-//Make test of changing footage quality (likely have printed text to show changes in quality best)
-//Make test of Stopping footage
-//make test of restarting footage
+//TODO 
+//TC1 Manual turn on
+
+//TC2 manual test of turning off
+
+
+//TC3  test of increasing footage quality (likely have printed text to show changes in quality best) while camera is "rolling"
+/*
+Goal: Test of footage quality increase with manual input 
+Precondition(s): Camera is already on and recording video at a lower quality
+Action(s): increase video quality command sent to camera (via function in library)
+Expected Behavior: Camera recording quality increases without pause in recording, and continues recording
+
+Expected Behavior: //Button push or some other manual input should cause the filming quality to increase
+camera should continue recording with no issues
+*/ 
+int manualQualityIncreaseTest(){
+    /*
+    turn camera on, start recording
+
+    wait for input
+    when recieve input, increase the video quality
+    call close down funtion that stops recording
+    */
+
+    return 0; //unsuccessful or unimplemented 
+}
+
+
+//TC4 make test of decreasing 
+/* 
+Goal: Test that camera video quality can be decreased with no issues (currently there is no funtion written for this functionality)
+Precondition(s): camera is on and footage is being recorded at a quality that is higher than the lowest possible. 
+Action(s): reduce video quality command sent to camera (via a function in the library)
+Expected Behavior:  camera footage decreases in quality when it recieves manual input and continues recording with no issues
+*/
+bool manualQualityDecreaseTest(){
+
+    return false; //test failed or 
+}
+
+//TC5 Make test of Stopping footage
+/*
+Goal: Test that footage can be stopped via commands
+Precondition(s): Camera is recording (at any quality) and has sufficient battery life and space remaining for at lease a few minutes more 
+Action(s): Send stop recording command to camera via function
+Expected Behavior: Recording stops, and captured video is stored correctly and retrievable 
+*/
+
+void manualStopRecording(){
+    //camera should be recording 
+    //wait for button input
+    //when button is pushed, call stop recording function
+}
+
+//TC6 make test of restarting footage
+/*
+Goal: Test that camera footage can be restarted after being stopped by a user command
+TCs covered:6
+Precondition(s): Camera is recording footage
+Action(s): Stop recording, (check after that video is saved correctly) restart recording via a command
+Expected Behavior: Camera should start recording as usual with no issues
+*/
+
+//TC7 Have a very small/very full storage card in camera, and start recording and keep recording 
+/*
+Goal: Test that 
+TCs covered: 
+Precondition(s): 
+Action(s)
+Expected Behavior: 
+*/
+
+
+
+
+
+
+/*
+Use cases: 
+
+as a user, I want to be able to turn on the camera, and have it turn off after a set period of time
+
+As  a user, I want to be able to turn on the camera and start recording right away, increase footage quality after some (non manual) input, then stop after a time limit 
+
+As a user, I want the camera to safely turn off and stop recording when power is lost/batteries go low. 
+
+As a user, I want footage to be successfully saved if the camera runs out of storage
+
+*/
+
+
+//Template
+
+/*
+Goal: 
+TCs covered: 
+Precondition(s): 
+Action(s)
+Expected Behavior: 
+*/
+
+
+
+//Test of basic turn on and turn off using user input 
+//Covers TC1 TC2 
+//NOTE THIS MIGHT NOT ACTUALLY BE USEFUL OR POSSIBLE
+int BasicTurnOnOffTest(){
+
+    return 0; //unsuccessful
+}
+
+
+
+
+
+
+
 
