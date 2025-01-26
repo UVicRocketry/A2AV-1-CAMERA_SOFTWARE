@@ -1,12 +1,23 @@
 #include <Arduino.h>
-#include <SoftwareSerial.h>
-
+#include <Adafruit_ADXL375.h>
+#include <Adafruit_Sensor.h>
+#include <Wire.h>
 #define BUFF_SIZE   20
+Adafruit_ADXL375 accel = Adafruit_ADXL375(12345);
 //Buffers for transmitting UART signals
 uint8_t 
     txBuf[BUFF_SIZE],
     rxBuf[BUFF_SIZE];
 
+long int timer;
+
+uint8_t crc8_calc( uint8_t crc, unsigned char a, uint8_t poly );
+uint8_t calcCrc( uint8_t *buf, uint8_t numBytes );
+void GetDeviceInfo();
+bool process_Accelerometer_data_ADXL375(int threshold );
+void start_timer();
+void stop_timer();
+void changeMode();
 //TODO:
 
 //Implement crc functionality
@@ -68,10 +79,30 @@ void ToggleRecording(){
 }
 
 
-//Implement functionality to begin recording
+//Gets data from accelerometer and returns true if it experiences acceleration greater than the given threshold
 
-//Implement functionality to stop recording
+float process_Accelerometer_data_ADXL375(){
+    /* Get a new sensor event */
+    sensors_event_t event;
+    accel.getEvent(&event);
+    return event.acceleration.z;
 
+}
+
+void start_timer(){
+    timer = millis();
+}
+
+void stop_timer(){
+    Serial.print("Time: ");
+    
+    if(timer != 0){
+        Serial.println(millis()-timer);
+        timer = 0;
+    }else{
+        Serial.println("Timer not started");
+    }
+}
 //Implement functionality to change recording quality
 void changeMode(){
     txBuf[0] = 0xCC;
@@ -84,18 +115,51 @@ void changeMode(){
 void setup(){
     //Initialize serial interface at 115200 baud
     Serial.begin(115200);
-    delay(10000);
-    GetDeviceInfo();
-    delay(10000);
-    ToggleRecording();
-    delay(10000);
-    ToggleRecording();
-    delay(500);
+    if(!accel.begin())
+  {
+    /* There was a problem detecting the ADXL375 ... check your connections */
+    Serial.println("Ooops, no ADXL375 detected ... Check your wiring!");
+    while(1);
+  }
 
+  // Range is fixed at +-200g
+
+ 
 }
+   
+
 
 void loop(){
-    GetDeviceInfo();
-    delay(5000);
-    changeMode();
+    String input {};
+    while(Serial.available()>0){
+        input = Serial.readString();
+        Serial.println(input);
+        if(input == "ToggleRecording"){
+            ToggleRecording();
+        }
+        if(input == "GetDeviceInfo"){
+            GetDeviceInfo();
+        }
+        if(input == "ChangeMode"){
+            changeMode();
+        }
+        if(input == "ReadAccelerometer"){
+            while(1){
+                float acceleration = process_Accelerometer_data_ADXL375();
+                if(acceleration - 17 > 7 ){
+                    Serial.println("Acceleration greater than 7 m/s^2");
+                    break;
+                }
+            }
+        }
+
+        if(input == "StartTimer"){
+            start_timer();
+        }
+        if(input == "StopTimer"){
+            stop_timer();
+        }
+    }
+    
+   
 }
