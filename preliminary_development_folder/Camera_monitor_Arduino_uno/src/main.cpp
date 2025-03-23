@@ -49,7 +49,8 @@ uint8_t calcCrc( uint8_t *buf, uint8_t numBytes )
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
-  delay(10000);
+  
+  Serial.print("test");
 }
 
 void loop() {
@@ -106,9 +107,8 @@ void loop() {
                     }//for
                     
                     Serial.println();
+                    idx=0;
                     
-                    //after this, halt and catch fire
-                    while(1);
                                 
                 }//if                
                 

@@ -1,9 +1,10 @@
 #include <Arduino.h>
-#include <Adafruit_ADXL375.h>
-#include <Adafruit_Sensor.h>
-#include <Wire.h>
+#include "I2Cdev.h"
+#include "MPU6050.h"
 #define BUFF_SIZE   20
-Adafruit_ADXL375 accel = Adafruit_ADXL375(12345);
+MPU6050 mpu;
+int16_t ax, ay, az;
+int16_t gx, gy, gz;
 //Buffers for transmitting UART signals
 uint8_t 
     txBuf[BUFF_SIZE],
@@ -14,7 +15,7 @@ long int timer;
 uint8_t crc8_calc( uint8_t crc, unsigned char a, uint8_t poly );
 uint8_t calcCrc( uint8_t *buf, uint8_t numBytes );
 void GetDeviceInfo();
-bool process_Accelerometer_data_ADXL375(int threshold );
+bool process_Accelerometer_data_MPU6050(int threshold );
 void start_timer();
 void stop_timer();
 void changeMode();
@@ -81,11 +82,10 @@ void ToggleRecording(){
 
 //Gets data from accelerometer and returns true if it experiences acceleration greater than the given threshold
 
-float process_Accelerometer_data_ADXL375(){
+float process_Accelerometer_data_MPU6050(){
     /* Get a new sensor event */
-    sensors_event_t event;
-    accel.getEvent(&event);
-    return event.acceleration.z;
+    mpu.getAcceleration(&ax, &ay, &az);
+    return az;
 
 }
 
@@ -115,14 +115,35 @@ void changeMode(){
 void setup(){
     //Initialize serial interface at 115200 baud
     Serial.begin(115200);
-    if(!accel.begin())
-  {
-    /* There was a problem detecting the ADXL375 ... check your connections */
-    Serial.println("Ooops, no ADXL375 detected ... Check your wiring!");
-    while(1);
+    /*--Start I2C interface--*/
+  #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
+    Wire.begin(); 
+  #elif I2CDEV_IMPLEMENTATION == I2CDEV_BUILTIN_FASTWIRE
+    Fastwire::setup(400, true);
+  #endif
+
+  Serial.begin(38400); //Initializate Serial wo work well at 8MHz/16MHz
+
+  /*Initialize device and check connection*/ 
+  Serial.println("Initializing MPU...");
+  mpu.initialize();
+  Serial.println("Testing MPU6050 connection...");
+  if(mpu.testConnection() ==  false){
+    Serial.println("MPU6050 connection failed");
+    while(true);
+  }
+  else{
+    Serial.println("MPU6050 connection successful");
   }
 
-  // Range is fixed at +-200g
+   /* Use the code below to change accel/gyro offset values. Use MPU6050_Zero to obtain the recommended offsets */ 
+  Serial.println("Updating internal sensor offsets...\n");
+  mpu.setXAccelOffset(0); //Set your accelerometer offset for axis X
+  mpu.setYAccelOffset(0); //Set your accelerometer offset for axis Y
+  mpu.setZAccelOffset(0); //Set your accelerometer offset for axis Z
+  mpu.setXGyroOffset(0);  //Set your gyro offset for axis X
+  mpu.setYGyroOffset(0);  //Set your gyro offset for axis Y
+  mpu.setZGyroOffset(0);  //Set your gyro offset for axis Z
 
  
 }
@@ -145,9 +166,11 @@ void loop(){
         }
         if(input == "ReadAccelerometer"){
             while(1){
-                float acceleration = process_Accelerometer_data_ADXL375();
-                if(acceleration - 17 > 7 ){
-                    Serial.println("Acceleration greater than 7 m/s^2");
+                float acceleration = process_Accelerometer_data_MPU6050();
+                if(acceleration > 0 ){
+                    Serial.print("Acceleration: ");
+                    Serial.print(acceleration-17);
+                    Serial.println(" m/s^2");
                     break;
                 }
             }
