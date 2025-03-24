@@ -1,27 +1,34 @@
 #include <Arduino.h>
 #include "I2Cdev.h"
 #include "MPU6050.h"
-#define BUFF_SIZE   20
+
+
+
+
+/*
+--------------------GLOBAL VARIABLE DECLARATIONS-----------------------------
+*/
 MPU6050 mpu;
-int16_t ax, ay, az;
-int16_t gx, gy, gz;
+int16_t range = 0;
+int16_t az;
 //Buffers for transmitting UART signals
+#define BUFF_SIZE   20
 uint8_t 
     txBuf[BUFF_SIZE],
     rxBuf[BUFF_SIZE];
 
 long int timer;
 
+
+//Function Declarations
 uint8_t crc8_calc( uint8_t crc, unsigned char a, uint8_t poly );
 uint8_t calcCrc( uint8_t *buf, uint8_t numBytes );
 void GetDeviceInfo();
-bool process_Accelerometer_data_MPU6050(int threshold );
+bool Calibrate_Accelerometer_MPU6050(int threshold );
 void start_timer();
 void stop_timer();
 void changeMode();
-//TODO:
 
-//Implement crc functionality
 /*
 PARAMS: uint8_t crc - the current value of the crc byte after processing
                       all bytes prior to current one
@@ -40,10 +47,10 @@ uint8_t crc8_calc( uint8_t crc, unsigned char a, uint8_t poly )
             crc = (crc << 1) ^ poly;
         else
             crc = crc << 1;
-    }//for
+    }
     return crc;
     
-}//crc8_calc
+}
 
 /*
 PARAMS: uint8_t* buf - The buffer to run the crc algorithm on
@@ -59,8 +66,13 @@ uint8_t calcCrc( uint8_t *buf, uint8_t numBytes ){
         crc = crc8_calc( crc, *(buf+i), 0xd5 );
 
     return crc;
-}//calcCrcTx
-//Implement functionality to get device info
+}
+
+/*
+PARAMS: none
+DESC: sends GetDeviceInfo command to RunCam. Instructs the RunCam to send packet containing details about capabilities, current status etc. 
+RETURNS: void
+*/
 void GetDeviceInfo(){
     //Send command to get device info
     txBuf[0] = 0xCC;
@@ -68,8 +80,12 @@ void GetDeviceInfo(){
     txBuf[2] = calcCrc(txBuf,2);
     Serial.write(txBuf,3);
 }
-//Implement functionality to turn camera on
 
+/*
+PARAMS: none
+DESC: sends ToggleRecording command to RunCam. Instructs the RunCam to Toggle its status from actively capturing footage to not (or vice versa). 
+RETURNS: void
+*/
 void ToggleRecording(){
     //Send command to turn camera on
      txBuf[0] = 0xCC;
@@ -79,21 +95,30 @@ void ToggleRecording(){
      Serial.write(txBuf, 4);
 }
 
-
-//Gets data from accelerometer and returns true if it experiences acceleration greater than the given threshold
-
-float process_Accelerometer_data_MPU6050(){
-    /* Get a new sensor event */
-    mpu.getAcceleration(&ax, &ay, &az);
-    while(az < 10000){
-        Serial.print("acceleration: ");
-        Serial.println(az);
-        mpu.getAcceleration(&ax, &ay, &az);
+/*
+PARAMS: none
+DESC: polls the MPU 6050 accelerometer for the acceleration readings in each direction
+RETURNS: pointers, max (first index) and min (second index) acceleration reading (raw output from ADC)
+*/
+ void Calibrate_Accelerometer__MPU6050(int* max, int* min){
+    long calibration_timer = millis();
+    Serial.print(calibration_timer);
+    az = mpu.getAccelerationZ();
+    while(calibration_timer+10000>millis()){
+        if(az > *max){
+            *max = az;
+            Serial.println(*max);
+        }
+        if(az < *min){
+            *min = az;
+            Serial.println(*min);
+        }
+        az = mpu.getAccelerationZ();
     }
-    return az;
+    
+ }
 
-}
-
+//timer determines when to stop recording so footage is not overwritten
 void start_timer(){
     timer = millis();
 }
@@ -129,6 +154,7 @@ void setup(){
   /*Initialize device and check connection*/ 
   Serial.println("Initializing MPU...");
   mpu.initialize();
+  mpu.setFullScaleAccelRange(MPU6050_ACCEL_FS_16);
   Serial.println("Testing MPU6050 connection...");
   if(mpu.testConnection() ==  false){
     Serial.println("MPU6050 connection failed");
@@ -146,12 +172,16 @@ void setup(){
   mpu.setXGyroOffset(0);  //Set your gyro offset for axis X
   mpu.setYGyroOffset(0);  //Set your gyro offset for axis Y
   mpu.setZGyroOffset(0);  //Set your gyro offset for axis Z
+  Serial.println("Accel Range");
+  
 
  
 }
    
 
-
+//TO DO:
+//pipe out data to a file and analyze accelerometer data to determine a threshold
+//Hysteresis (maybe)
 void loop(){
     String input {};
     while(Serial.available()>0){
@@ -167,15 +197,14 @@ void loop(){
             changeMode();
         }
         if(input == "ReadAccelerometer"){
-            while(1){
-                float acceleration = process_Accelerometer_data_MPU6050();
-                if(true ){
-                    Serial.print("Acceleration: ");
-                    Serial.print(acceleration-17);
-                    Serial.println(" m/s^2");
-                    break;
-                }
-            }
+            int min = 10000; //larger than max ADC reading at +- 16g sensitivity
+            int max = -10000; //smaller than min ADC reading at +- 16g sensitivity
+            Calibrate_Accelerometer__MPU6050(&max,&min);
+            Serial.print("Acceleration: ");
+            Serial.println("max (raw ADC): ");
+            Serial.println(max);
+            Serial.println("min(raw ADC): ");
+            Serial.println(min);
         }
 
         if(input == "StartTimer"){
