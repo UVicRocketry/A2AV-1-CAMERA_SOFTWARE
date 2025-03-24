@@ -85,6 +85,11 @@ void ToggleRecording(){
 float process_Accelerometer_data_MPU6050(){
     /* Get a new sensor event */
     mpu.getAcceleration(&ax, &ay, &az);
+    while(az < 10000){
+        Serial.print("acceleration: ");
+        Serial.println(az);
+        mpu.getAcceleration(&ax, &ay, &az);
+    }
     return az;
 
 }
@@ -121,9 +126,6 @@ void setup(){
   #elif I2CDEV_IMPLEMENTATION == I2CDEV_BUILTIN_FASTWIRE
     Fastwire::setup(400, true);
   #endif
-
-  Serial.begin(38400); //Initializate Serial wo work well at 8MHz/16MHz
-
   /*Initialize device and check connection*/ 
   Serial.println("Initializing MPU...");
   mpu.initialize();
@@ -167,7 +169,7 @@ void loop(){
         if(input == "ReadAccelerometer"){
             while(1){
                 float acceleration = process_Accelerometer_data_MPU6050();
-                if(acceleration > 0 ){
+                if(true ){
                     Serial.print("Acceleration: ");
                     Serial.print(acceleration-17);
                     Serial.println(" m/s^2");
