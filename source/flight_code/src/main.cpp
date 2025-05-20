@@ -1,5 +1,5 @@
 #include "UART_messages.h"
-
+#include <Arduino.h>
 typedef enum
 {
     ON_PAD,
@@ -8,3 +8,11 @@ typedef enum
 
 }rocket_state_t;
 
+void setup(){
+
+}
+
+
+void loop(){
+
+}
