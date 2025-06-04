@@ -1,11 +1,9 @@
 //
 // Created by Kheph on 2025-05-16.
 //
-
+#include <Arduino.h>
 #ifndef ACCELEROMETER_FILTER_H
 #define ACCELEROMETER_FILTER_H
-
-
 
 class accelerometer_EMA {
 private:
@@ -19,9 +17,9 @@ private:
   float buffer[WINDOW_SIZE];
 
 public:
-  accelerometer_EMA(float sampling_freq, float threshold): threshold{threshold},index{0},count{0}, sampling_freq{sampling_freq}, {}
-
+  accelerometer_EMA(float sampling_freq, float threshold)
+      : threshold{threshold}, index{0}, count{0}, sampling_freq{sampling_freq},
+  {}
 };
 
-
-#endif //ACCELEROMETER_FILTER_H
+#endif // ACCELEROMETER_FILTER_H
