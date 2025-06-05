@@ -1,15 +1,20 @@
+// https://github.com/ElectronicCats/mpu6050/wiki/1.-How-does-MPU6050-work%3F
+
 #include "I2Cdev.h"
 #include "MPU6050.h"
-#include "MPU6050_6Axis_MotionApps20.h"
 #include "UART_messages.h"
 #include "accelerometer_filter.h"
 #include <Arduino.h>
+#include <Stream.h>
 
-#define MAXCONNECTIONATTEMPTS (3)
-#define SIXHOURSINMILLISECOND (21600000)
-#define BUFF_SIZE (20)
-#define INTERRUPT_PIN (2)
+#define MAXCONNECTIONATTEMPTS 3
+#define SIXHOURSINMILLISECOND 21600000
+#define BUFF_SIZE 20
+#define INTERRUPT_PIN 2
+#define SAMPLING_PERIOD_MICROS 100000
 
+int8_t ACCELERATION_Z_THRESHOLD_Gs = 2;
+uint8_t connection_attempts{};
 typedef enum {
   ON_PAD,
   LAUNCHED,
@@ -17,38 +22,9 @@ typedef enum {
 
 } camera_state_t;
 
-// Indicates whether MPU6050 interrupt pin has gone high
-volatile bool MPUInterrupt = false;
-bool DMPReady = false;
-
-static unsigned long timer{};
-
 static MPU6050 mpu{};
 
-static uint8_t txBuf[BUFF_SIZE], rxBuf[BUFF_SIZE];
-
-uint8_t FIFOBuffer[64];
-
-uint8_t MPUIntStatus;
-
-Quaternion q; // [w, x, y, z]         Quaternion container
-
-VectorInt16 aa; // [x, y, z]            Accel sensor measurements
-
-VectorInt16 aaReal;
-
-VectorFloat gravity;
-
-uint8_t devStatus; // Return status after each device operation (0 = success, !0
-                   // = error)
-
 static camera_state_t cameraState{};
-
-void DMPDataReady() { MPUInterrupt = true; }
-
-void start_timer() { timer = millis(); }
-
-void stop_timer() { timer = 0; }
 
 void init_UART() {
   Serial.begin(115200);
@@ -69,74 +45,71 @@ void init_I2C() {
 void init_mpu() {
 
   Serial.println(F("Testing MPU6050 connection..."));
-  if (mpu.testConnection() == false) {
-    Serial.println("MPU6050 connection failed");
-    while (true)
-      ;
-  } else {
-    Serial.println("MPU6050 connection successful");
+  while (mpu.testConnection() == false) {
+    if (++connection_attempts >= MAXCONNECTIONATTEMPTS) {
+      Serial.println("MPU6050 connection failed");
+      // skip launch detection if unable to connect to mpu
+      cameraState = LAUNCHED;
+      ACCELERATION_Z_THRESHOLD_Gs = -1;
+    }
   }
 
-  mpu.initialize();
-  pinMode(INTERRUPT_PIN, INPUT);
-}
+  Serial.println("MPU6050 connection successful");
 
-void init_dmp() {
-  Serial.println(F("Initializing DMP..."));
-  devStatus = mpu.dmpInitialize();
-  /* Supply your gyro offsets here, scaled for min sensitivity */
+  mpu.initialize();
+  mpu.setFullScaleAccelRange(MPU6050_ACCEL_FS_16);
   mpu.setXGyroOffset(0);
   mpu.setYGyroOffset(0);
   mpu.setZGyroOffset(0);
   mpu.setXAccelOffset(0);
   mpu.setYAccelOffset(0);
   mpu.setZAccelOffset(0);
-
-  if (devStatus == 0) {
-    mpu.CalibrateAccel(6);
-    mpu.CalibrateGyro(6);
-    Serial.println("These are the Active offsets: ");
-    mpu.PrintActiveOffsets();
-    Serial.println(F("Enabling DMP...")); // Turning ON DMP
-    mpu.setDMPEnabled(true);
-
-    /*Enable Arduino interrupt detection*/
-    Serial.print(
-        F("Enabling interrupt detection (Arduino external interrupt "));
-    Serial.print(digitalPinToInterrupt(INTERRUPT_PIN));
-    Serial.println(F(")..."));
-    attachInterrupt(digitalPinToInterrupt(INTERRUPT_PIN), DMPDataReady, RISING);
-    MPUIntStatus = mpu.getIntStatus();
-
-    /* Set the DMP Ready flag so the main loop() function knows it is okay to
-     * use it */
-    Serial.println(F("DMP ready! Waiting for first interrupt..."));
-    DMPReady = true;
-
-  } else {
-    Serial.print(F("DMP Initialization failed (code ")); // Print the error code
-    Serial.print(devStatus);
-    Serial.println(F(")"));
-    // 1 = initial memory load failed
-    // 2 = DMP configuration updates failed
-  }
+  mpu.CalibrateAccel(6);
+  mpu.CalibrateGyro(6);
 }
 
 void setup() {
   init_UART();
   init_I2C();
   init_mpu();
-  init_dmp();
 }
 
 void loop() {
-  if (mpu.dmpGetCurrentFIFOPacket(FIFOBuffer)) {
-    mpu.dmpGetQuaternion(&q, FIFOBuffer);
-    mpu.dmpGetAccel(&aa, FIFOBuffer);
-    mpu.dmpGetGravity(&gravity, &q);
-    mpu.dmpGetLinearAccel(&aaReal, &aa, &gravity);
-    mpu.dmpConvertToWorldFrame(&aaReal, &aa, &q);
-    // at this line aaReal.z should contain an accurate z acceleration in g
-  }
+  static accelerometer_SMA<20> filter;
+  static Camera camera{Serial};
+  static unsigned long prevMicros = micros();
+  switch (cameraState) {
+  case ON_PAD: 
+    if (micros() - prevMicros >= SAMPLING_PERIOD_MICROS) {
+      int rawValue = mpu.getAccelerationZ();
+      int filteredValue = filter(rawValue);
+      Serial.print(rawValue);
+      Serial.print('\t');
+      Serial.println(filteredValue);
+      prevMicros += SAMPLING_PERIOD_MICROS;
+      if (filteredValue > ACCELERATION_Z_THRESHOLD_Gs) {
+        camera.start_timer();
+        cameraState = LAUNCHED;
+      }
+    }
+    break;
+  
+  case LAUNCHED:
+    if (camera.get_timer() > SIXHOURSINMILLISECOND) {
+      camera.stop_timer();
+      camera.ToggleRecording();
+      cameraState = TIMER_EXPIRED;
+    }
 
-  // Todo: implement logic for state transistions
+    break;
+  case TIMER_EXPIRED:
+    while (true)
+      ;
+
+    break;
+
+  default:
+    break;
+  }
+}
+

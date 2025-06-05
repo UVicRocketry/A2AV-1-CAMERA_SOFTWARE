@@ -1,25 +1,34 @@
 //
 // Created by Kheph on 2025-05-16.
-//
+// A class to apply a simple moving average filter to sensor data
+// In this case, the filter is being applied to accelerometer sensor data
 #include <Arduino.h>
 #ifndef ACCELEROMETER_FILTER_H
 #define ACCELEROMETER_FILTER_H
-
-class accelerometer_EMA {
-private:
-  static constexpr int WINDOW_SIZE = 50;
-  float sampling_freq;
-  float threshold;
-  uint32_t index;
-  uint32_t count;
-  float sum;
-  int count;
-  float buffer[WINDOW_SIZE];
+template <uint8_t N, class input_t = uint16_t, class sum_t = uint32_t>
+class accelerometer_SMA {
 
 public:
-  accelerometer_EMA(float sampling_freq, float threshold)
-      : threshold{threshold}, index{0}, count{0}, sampling_freq{sampling_freq},
-  {}
+  input_t operator()(input_t input) {
+    input /= 2048; // converts raw adc to gs
+    // don't need subtract 1 g due to calibration
+    sum -= previousInputs[index];
+    sum += input;
+    previousInputs[index] = input;
+    if (++index == N)
+      index = 0;
+    return (sum + (N / 2)) / N;
+  }
+
+  static_assert(
+      sum_t(0) < sum_t(-1), // check that sum_t is an undefined type
+      "Error sum data type should be an unsinged integer."
+      "Otherwise, the rounding operation in the return statement is invalid");
+
+private:
+  uint8_t index{};
+  input_t previousInputs[N] = {};
+  sum_t sum{};
 };
 
 #endif // ACCELEROMETER_FILTER_H
