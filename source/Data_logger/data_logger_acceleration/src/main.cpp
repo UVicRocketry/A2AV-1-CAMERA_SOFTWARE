@@ -21,6 +21,7 @@ void test_accelerometer() {
 
 void setup() {
   Serial.begin(9600);
+  delay(10000);
   /*--Start I2C interface--*/
 #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
   Wire.begin();
