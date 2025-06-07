@@ -17,7 +17,7 @@ public:
     previousInputs[index] = input;
     if (++index == N)
       index = 0;
-    return (sum + (N / 2.0)) / N;
+    return (sum) / N;
   }
 
 private:
