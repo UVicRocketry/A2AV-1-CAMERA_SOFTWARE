@@ -7,14 +7,33 @@
 #include <Arduino.h>
 #include <Stream.h>
 
-#define MAXCONNECTIONATTEMPTS 3
-#define SIXHOURSINMILLISECOND 21600000
-#define BUFF_SIZE 20
-#define INTERRUPT_PIN 2
-#define SAMPLING_PERIOD_MICROS 100000
+//the width of the simple moving average filter
+#define FILTER_WIDTH 100
 
-int8_t ACCELERATION_Z_THRESHOLD_Gs = 2;
-uint8_t connection_attempts{};
+#define MAXCONNECTIONATTEMPTS 3
+
+//this is how long the camera will record for
+#define SIXHOURSINMILLISECOND 21600000
+//size of the UART transmission buffer
+#define BUFF_SIZE 20
+
+#define SAMPLING_PERIOD_MICROS 1000 //(1 millisecond, sampling frequency = 1000Hz)
+//note: since the filter width is 100 samples (the current sample depends on the 100 previous samples) there is 99 ms of latency or (m-1) samples
+
+
+// The threshold at which launch is considered to have been detected
+//According to the RasAero simulations, we will reach acceleration of 300 ft / s^2 in the first 0.04 seconds of launch
+//corresponds to:
+/*
+              1 m          1g
+300 ft/s^2 * --------  *  --------
+             3.28 ft      9.8 m/s^2
+*/
+float ACCELERATION_Z_THRESHOLD_Gs = 9.33;
+//float ACCELERATION_Z_THRESHOLD_Gs = 6;
+
+uint8_t connection_attempts  {};
+
 typedef enum {
   ON_PAD,
   LAUNCHED,
@@ -35,7 +54,7 @@ void init_UART() {
 void init_I2C() {
 #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
   Wire.begin();
-  Wire.setClock(400000); // 400kHz I2C clock. Comment on this line if having
+  Wire.setClock(400000); // 400kHz I2C clock. Comment out this line if having
                          // compilation difficulties
 #elif I2CDEV_IMPLEMENTATION == I2CDEV_BUILTIN_FASTWIRE
   Fastwire::setup(400, true);
@@ -58,14 +77,13 @@ void init_mpu() {
 
   mpu.initialize();
   mpu.setFullScaleAccelRange(MPU6050_ACCEL_FS_16);
-  mpu.setXGyroOffset(0);
-  mpu.setYGyroOffset(0);
-  mpu.setZGyroOffset(0);
+  mpu.setFullScaleGyroRange(MPU6050_GYRO_FS_250);
+  //only calibration is required. Calibration sets the active offsets
+  //setting active offsets externally is not required
   mpu.setXAccelOffset(0);
   mpu.setYAccelOffset(0);
   mpu.setZAccelOffset(0);
-  mpu.CalibrateAccel(6);
-  mpu.CalibrateGyro(6);
+
 }
 
 void setup() {
@@ -75,14 +93,14 @@ void setup() {
 }
 
 void loop() {
-  static accelerometer_SMA<20> filter;
+  static accelerometer_SMA<FILTER_WIDTH> filter;
   static Camera camera{Serial};
   static unsigned long prevMicros = micros();
   switch (cameraState) {
   case ON_PAD: 
     if (micros() - prevMicros >= SAMPLING_PERIOD_MICROS) {
-      int rawValue = mpu.getAccelerationZ();
-      int filteredValue = filter(rawValue);
+      float rawValue = mpu.getAccelerationZ() + 2048.0 - 250.0;
+      float filteredValue = filter(rawValue);
       Serial.print(rawValue);
       Serial.print('\t');
       Serial.println(filteredValue);
@@ -90,6 +108,7 @@ void loop() {
       if (filteredValue > ACCELERATION_Z_THRESHOLD_Gs) {
         camera.start_timer();
         cameraState = LAUNCHED;
+        Serial.println("detected launch");
       }
     }
     break;
@@ -99,6 +118,7 @@ void loop() {
       camera.stop_timer();
       camera.ToggleRecording();
       cameraState = TIMER_EXPIRED;
+      Serial.println("timer expired");
     }
 
     break;
