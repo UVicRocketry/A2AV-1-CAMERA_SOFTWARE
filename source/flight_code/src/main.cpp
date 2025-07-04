@@ -12,8 +12,9 @@
 
 #define MAXCONNECTIONATTEMPTS 3
 
-//this is how long the camera will record for
-#define SIXHOURSINMILLISECOND 21600000
+//this is how long the camera will record for in milliseconds
+//#define SIXHOURSINMILLISECOND 21600000
+#define SIXHOURSINMILLISECOND 10000 //uncomment this #define directive for testing
 //size of the UART transmission buffer
 #define BUFF_SIZE 20
 
@@ -29,8 +30,8 @@
 300 ft/s^2 * --------  *  --------
              3.28 ft      9.8 m/s^2
 */
-float ACCELERATION_Z_THRESHOLD_Gs = 9.33;
-//float ACCELERATION_Z_THRESHOLD_Gs = 6;
+//float ACCELERATION_Z_THRESHOLD_Gs = 9.33;
+float ACCELERATION_Z_THRESHOLD_Gs = 4; //uncomment this for testing
 
 uint8_t connection_attempts  {};
 
@@ -97,7 +98,8 @@ void loop() {
   static Camera camera{Serial};
   static unsigned long prevMicros = micros();
   switch (cameraState) {
-  case ON_PAD: 
+  case ON_PAD:
+    Serial.println("State: ON_PAD");
     if (micros() - prevMicros >= SAMPLING_PERIOD_MICROS) {
       float rawValue = mpu.getAccelerationZ() + 2048.0 - 250.0;
       float filteredValue = filter(rawValue);
@@ -108,24 +110,24 @@ void loop() {
       if (filteredValue > ACCELERATION_Z_THRESHOLD_Gs) {
         camera.start_timer();
         cameraState = LAUNCHED;
-        Serial.println("detected launch");
       }
     }
     break;
   
   case LAUNCHED:
-    if (camera.get_timer() > SIXHOURSINMILLISECOND) {
+    Serial.println("State: LAUNCHED");
+    if (millis() - camera.get_timer() > SIXHOURSINMILLISECOND) {
       camera.stop_timer();
       camera.ToggleRecording();
       cameraState = TIMER_EXPIRED;
-      Serial.println("timer expired");
+
     }
 
     break;
   case TIMER_EXPIRED:
-    while (true)
-      ;
-
+    Serial.print("State: TIMER_EXPIRED (");
+    Serial.print(SIXHOURSINMILLISECOND);
+    Serial.println(" ms)");
     break;
 
   default:

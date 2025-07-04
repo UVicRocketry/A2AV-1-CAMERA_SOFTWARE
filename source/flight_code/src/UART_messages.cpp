@@ -12,6 +12,10 @@ Camera::Camera(Stream& port) : serial_port{port}, timer{0}, txBuf{}, rxBuf{} {}
 
 unsigned long long Camera::get_timer() { return timer; }
 
+void Camera::start_timer() { timer = millis(); }
+
+void Camera::stop_timer() { timer = 0; }
+
 uint8_t Camera::crc8_calc(uint8_t crc, unsigned char a, uint8_t poly) {
   crc ^= a;
   for (int ii = 0; ii < 8; ++ii) {
@@ -55,7 +59,3 @@ void Camera::GetDeviceInfo() {
   txBuf[2] = calcCrc(txBuf, 2);
   serial_port.write(txBuf, 3);
 }
-
-void Camera::start_timer() { timer = millis(); }
-
-void Camera::stop_timer() { timer = 0; }
