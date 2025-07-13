@@ -13,8 +13,8 @@
 #define MAXCONNECTIONATTEMPTS 3
 
 //this is how long the camera will record for in milliseconds
-//#define SIXHOURSINMILLISECOND 21600000
-#define SIXHOURSINMILLISECOND 10000 //uncomment this #define directive for testing
+//#define ONEHOURINMILLISECOND 3600000
+#define ONEHOURINMILLISECOND 10000 //uncomment this #define directive for testing
 //size of the UART transmission buffer
 #define BUFF_SIZE 20
 
@@ -113,7 +113,7 @@ void loop() {
   
   case LAUNCHED:
     Serial.println("State: LAUNCHED");
-    if (millis() - camera.get_timer() > SIXHOURSINMILLISECOND) {
+    if (millis() - camera.get_timer() > ONEHOURINMILLISECOND) {
       camera.stop_timer();
       camera.ToggleRecording();
       cameraState = TIMER_EXPIRED;
@@ -123,7 +123,7 @@ void loop() {
     break;
   case TIMER_EXPIRED:
     Serial.print("State: TIMER_EXPIRED (");
-    Serial.print(SIXHOURSINMILLISECOND);
+    Serial.print(ONEHOURINMILLISECOND);
     Serial.println(" ms)");
     break;
 
