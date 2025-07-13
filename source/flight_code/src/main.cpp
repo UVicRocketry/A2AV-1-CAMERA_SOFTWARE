@@ -21,6 +21,9 @@
 #define SAMPLING_PERIOD_MICROS 1000 //(1 millisecond, sampling frequency = 1000Hz)
 //note: since the filter width is 100 samples (the current sample depends on the 100 previous samples) there is 99 ms of latency or (m-1) samples
 
+/*The offset required in the raw ADC output of the MPU 6050 with a 16g full scale reading
+such that when at rest the vertical acceleration measured (z) is 1g*/
+#define CALIBRATION_FACTOR 250
 
 // The threshold at which launch is considered to have been detected
 //According to the RasAero simulations, we will reach acceleration of 300 ft / s^2 in the first 0.04 seconds of launch
@@ -53,13 +56,8 @@ void init_UART() {
 }
 
 void init_I2C() {
-#if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
   Wire.begin();
-  Wire.setClock(400000); // 400kHz I2C clock. Comment out this line if having
-                         // compilation difficulties
-#elif I2CDEV_IMPLEMENTATION == I2CDEV_BUILTIN_FASTWIRE
-  Fastwire::setup(400, true);
-#endif
+  Wire.setClock(400000);
 }
 
 void init_mpu() {
@@ -79,8 +77,7 @@ void init_mpu() {
   mpu.initialize();
   mpu.setFullScaleAccelRange(MPU6050_ACCEL_FS_16);
   mpu.setFullScaleGyroRange(MPU6050_GYRO_FS_250);
-  //only calibration is required. Calibration sets the active offsets
-  //setting active offsets externally is not required
+
   mpu.setXAccelOffset(0);
   mpu.setYAccelOffset(0);
   mpu.setZAccelOffset(0);
