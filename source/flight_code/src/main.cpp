@@ -31,7 +31,7 @@
              3.28 ft      9.8 m/s^2
 */
 //float ACCELERATION_Z_THRESHOLD_Gs = 9.33;
-float ACCELERATION_Z_THRESHOLD_Gs = 4; //uncomment this for testing
+float ACCELERATION_Z_THRESHOLD_Gs = 1.2; //uncomment this for testing
 
 uint8_t connection_attempts  {};
 
@@ -44,10 +44,10 @@ typedef enum {
 
 static MPU6050 mpu{};
 
-static camera_state_t cameraState{};
+static camera_state_t cameraState{ON_PAD};
 
 void init_UART() {
-  Serial.begin(115200);
+  Serial.begin(9600);
   while (!Serial)
     ;
 }
@@ -91,6 +91,8 @@ void setup() {
   init_UART();
   init_I2C();
   init_mpu();
+  Serial.end();
+  Serial.begin(115200);
 }
 
 void loop() {
@@ -99,13 +101,9 @@ void loop() {
   static unsigned long prevMicros = micros();
   switch (cameraState) {
   case ON_PAD:
-    Serial.println("State: ON_PAD");
     if (micros() - prevMicros >= SAMPLING_PERIOD_MICROS) {
       float rawValue = mpu.getAccelerationZ() + 2048.0 - 250.0;
       float filteredValue = filter(rawValue);
-      Serial.print(rawValue);
-      Serial.print('\t');
-      Serial.println(filteredValue);
       prevMicros += SAMPLING_PERIOD_MICROS;
       if (filteredValue > ACCELERATION_Z_THRESHOLD_Gs) {
         camera.start_timer();
@@ -115,7 +113,6 @@ void loop() {
     break;
   
   case LAUNCHED:
-    Serial.println("State: LAUNCHED");
     if (millis() - camera.get_timer() > SIXHOURSINMILLISECOND) {
       camera.stop_timer();
       camera.ToggleRecording();
@@ -125,9 +122,6 @@ void loop() {
 
     break;
   case TIMER_EXPIRED:
-    Serial.print("State: TIMER_EXPIRED (");
-    Serial.print(SIXHOURSINMILLISECOND);
-    Serial.println(" ms)");
     break;
 
   default:
