@@ -34,15 +34,14 @@ such that when at rest the vertical acceleration measured (z) is 1g*/
              3.28 ft      9.8 m/s^2
 */
 //float ACCELERATION_Z_THRESHOLD_Gs = 9.33;
-float ACCELERATION_Z_THRESHOLD_Gs = 1.2; //uncomment this for testing
+float ACCELERATION_Y_THRESHOLD_Gs = 1.2; //uncomment this for testing
 
-uint8_t connection_attempts  {};
+uint8_t connection_attempts{};
 
 typedef enum {
-  ON_PAD,
-  LAUNCHED,
-  TIMER_EXPIRED
-
+    ON_PAD,
+    LAUNCHED,
+    TIMER_EXPIRED
 } camera_state_t;
 
 static MPU6050 mpu{};
@@ -50,79 +49,74 @@ static MPU6050 mpu{};
 static camera_state_t cameraState{ON_PAD};
 
 void init_UART() {
-  Serial.begin(9600);
-  while (!Serial)
-    ;
+    Serial.begin(9600);
+    while (!Serial);
 }
 
 void init_I2C() {
-  Wire.begin();
-  Wire.setClock(400000);
+    Wire.begin();
+    Wire.setClock(400000);
 }
 
 void init_mpu() {
-
-  Serial.println(F("Testing MPU6050 connection..."));
-  while (mpu.testConnection() == false) {
-    if (++connection_attempts >= MAXCONNECTIONATTEMPTS) {
-      Serial.println("MPU6050 connection failed");
-      // skip launch detection if unable to connect to mpu
-      cameraState = LAUNCHED;
-      ACCELERATION_Z_THRESHOLD_Gs = -1;
+    Serial.println(F("Testing MPU6050 connection..."));
+    while (mpu.testConnection() == false) {
+        if (++connection_attempts >= MAXCONNECTIONATTEMPTS) {
+            Serial.println("MPU6050 connection failed");
+            // skip launch detection if unable to connect to mpu
+            cameraState = LAUNCHED;
+            ACCELERATION_Y_THRESHOLD_Gs = -1;
+        }
     }
-  }
 
-  Serial.println("MPU6050 connection successful");
+    Serial.println("MPU6050 connection successful");
 
-  mpu.initialize();
-  mpu.setFullScaleAccelRange(MPU6050_ACCEL_FS_16);
-  mpu.setFullScaleGyroRange(MPU6050_GYRO_FS_250);
+    mpu.initialize();
+    mpu.setFullScaleAccelRange(MPU6050_ACCEL_FS_16);
+    mpu.setFullScaleGyroRange(MPU6050_GYRO_FS_250);
 
-  mpu.setXAccelOffset(0);
-  mpu.setYAccelOffset(0);
-  mpu.setZAccelOffset(0);
-
+    mpu.setXAccelOffset(0);
+    mpu.setYAccelOffset(0);
+    mpu.setZAccelOffset(0);
 }
 
 void setup() {
-  init_UART();
-  init_I2C();
-  init_mpu();
-  Serial.end();
-  Serial.begin(115200);
+    init_UART();
+    init_I2C();
+    init_mpu();
+    Serial.end();
+    Serial.begin(115200);
 }
 
 void loop() {
-  static accelerometer_SMA<FILTER_WIDTH> filter;
-  static Camera camera{Serial};
-  static unsigned long prevMicros = micros();
-  switch (cameraState) {
-  case ON_PAD:
-    if (micros() - prevMicros >= SAMPLING_PERIOD_MICROS) {
-      float rawValue = mpu.getAccelerationZ() + 2048.0 - 250.0;
-      float filteredValue = filter(rawValue);
-      prevMicros += SAMPLING_PERIOD_MICROS;
-      if (filteredValue > ACCELERATION_Z_THRESHOLD_Gs) {
-        camera.start_timer();
-        cameraState = LAUNCHED;
-      }
+    static accelerometer_SMA<FILTER_WIDTH> filter;
+    static Camera camera{Serial};
+    static unsigned long prevMicros = micros();
+    switch (cameraState) {
+        case ON_PAD:
+            if (micros() - prevMicros >= SAMPLING_PERIOD_MICROS) {
+                float rawValue = -mpu.getAccelerationY() + 2048.0 - 250.0;
+                float filteredValue = filter(rawValue);
+                prevMicros += SAMPLING_PERIOD_MICROS;
+                if (filteredValue > ACCELERATION_Y_THRESHOLD_Gs) {
+                    camera.start_timer();
+                    cameraState = LAUNCHED;
+                }
+            }
+            break;
+
+        case LAUNCHED:
+            if (millis() - camera.get_timer() > ONEHOURINMILLISECOND) {
+                camera.stop_timer();
+                camera.ToggleRecording();
+                cameraState = TIMER_EXPIRED;
+            }
+
+            break;
+        case TIMER_EXPIRED:
+            break;
+
+        default:
+            break;
     }
-    break;
-  
-  case LAUNCHED:
-    if (millis() - camera.get_timer() > ONEHOURINMILLISECOND) {
-      camera.stop_timer();
-      camera.ToggleRecording();
-      cameraState = TIMER_EXPIRED;
-
-    }
-
-    break;
-  case TIMER_EXPIRED:
-    break;
-
-  default:
-    break;
-  }
 }
-
