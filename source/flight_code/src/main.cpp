@@ -6,6 +6,7 @@
 #include "accelerometer_filter.h"
 #include <Arduino.h>
 #include <Stream.h>
+#include <buzzer.h>
 
 //the width of the simple moving average filter
 #define FILTER_WIDTH 100
@@ -14,8 +15,8 @@
 
 //this is how long the camera will record for in milliseconds
 //#define ONEHOURINMILLISECOND 3600000
-#define ONEHOURINMILLISECOND 10000 //uncomment this #define directive for testing
-//size of the UART transmission buffer
+#define ONEHOURINMILLISECOND 600000 //uncomment this #define directive for testing
+//size of the UART transmission bufferk
 #define BUFF_SIZE 20
 
 #define SAMPLING_PERIOD_MICROS 1000 //(1 millisecond, sampling frequency = 1000Hz)
@@ -86,6 +87,10 @@ void setup() {
     init_mpu();
     Serial.end();
     Serial.begin(115200);
+
+    //Buzzer Logic
+    buzzer_init();
+    play_buzzer();
 }
 
 void loop() {
